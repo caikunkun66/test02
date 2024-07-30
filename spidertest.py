@@ -65,7 +65,7 @@ while next_page_link:
 #     print(link)
 # 连接到MySQL数据库
 try:
-    conn = mysql.connector.connect(**mysql_config)
+    conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor()
 
     for link in product_links:
