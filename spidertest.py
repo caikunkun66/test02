@@ -5,10 +5,10 @@ import mysql.connector
 
 # MySQL数据库连接配置
 db_config = {
-    'host': '你的数据库主机',
-    'user': '你的用户名',
-    'password': '你的密码',
-    'database': '你的数据库名称'
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'root_123456',
+    'database': 'Test'
 }
 
 # 初始页面URL
@@ -63,28 +63,42 @@ while next_page_link:
 # # 打印所有找到的产品页面链接
 # for link in product_links:
 #     print(link)
-for link in product_links:
-    response = requests.get(link)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    
-    # 查找所有符合条件的 <div> 标签
-    div_tags = soup.find_all('div', class_='item-thumbnail')
+# 连接到MySQL数据库
+try:
+    conn = mysql.connector.connect(**mysql_config)
+    cursor = conn.cursor()
 
-    # 遍历每个符合条件的 <div> 标签
-    for div_tag in div_tags:
-        # 在每个 <posts> 标签中查找 <img> <a>标签
-        img_tags = div_tag.find_all('img')
-        a_tags = div_tag.find_all('a')
-        for a in a_tags:
-            href = a.get('href')  
-        # 输出每个 <img> 标签的 src\alt 属性值
-        for img in img_tags:
-            img_src = img.get('data-src')
-            img_alt = img.get('alt')
-            
-            if img_src:
-                print(img_alt)
-            if href:
-                print(href)
-            if img_src:
-                print(img_src)
+    for link in product_links:
+        response = requests.get(link)
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # 查找所有符合条件的 <div> 标签
+        div_tags = soup.find_all('div', class_='item-thumbnail')
+
+        # 遍历每个符合条件的 <div> 标签
+        for div_tag in div_tags:
+            # 在每个 <posts> 标签中查找 <img> <a>标签
+            img_tags = div_tag.find_all('img')
+            a_tags = div_tag.find_all('a')
+            for a in a_tags:
+                href = a.get('href')  
+            # 输出每个 <img> 标签的 src\alt 属性值
+            for img in img_tags:
+                img_src = img.get('data-src')
+                img_alt = img.get('alt')
+                html_content = soup.prettify()
+            # 插入数据到数据库
+                if img_src:
+                    insert_query = "INSERT INTO product_information (title, image, link,page) VALUES (%s, %s, %s,%s)"
+                    data = (img_alt, img_src, img_alt,)
+                    cursor.execute(insert_query, data,html_content)
+                    conn.commit() #提交事务，将数据插入到数据库中。在执行插入、更新或删除操作后，必须调用 conn.commit() 才能使更改生效。
+
+except mysql.connector.Error as err:
+    print(f"数据库错误：{err}")
+
+finally:
+    if 'conn' in locals() and conn.is_connected():
+        cursor.close()
+        conn.close()
+        print("数据库连接已关闭。")
