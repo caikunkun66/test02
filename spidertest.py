@@ -1,6 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+import mysql.connector
+
+# MySQL数据库连接配置
+db_config = {
+    'host': '你的数据库主机',
+    'user': '你的用户名',
+    'password': '你的密码',
+    'database': '你的数据库名称'
+}
 
 # 初始页面URL
 base_url = 'https://www.yapingkeji.com/product/'
@@ -79,4 +88,3 @@ for link in product_links:
                 print(href)
             if img_src:
                 print(img_src)
-                print('test')
