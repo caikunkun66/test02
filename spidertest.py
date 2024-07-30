@@ -79,4 +79,4 @@ for link in product_links:
                 print(href)
             if img_src:
                 print(img_src)
-print('hello')
+                
