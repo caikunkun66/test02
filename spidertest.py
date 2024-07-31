@@ -2,13 +2,15 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import mysql.connector
+import random
+from db import db_host, db_user, db_password, db_database
 
 # MySQL数据库连接配置
 db_config = {
-    'host': '192.168.18.200',
-    'user': 'root',
-    'password': 'root_123456',
-    'database': 'Test'
+    'host': 'db_host',
+    'user': 'db_user',
+    'password': 'db_password',
+    'database': 'db_database'
 }
 
 # 初始页面URL
@@ -17,8 +19,42 @@ base_url = 'https://www.yapingkeji.com/product/'
 # 存储所有产品页面的链接
 product_links = [base_url]
 
+# 自定义User-Agent
+user_agents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/91.0.864.67 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Edge/91.0.864.67 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/91.0.864.67 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36'
+]
+# 从 user_agents 列表中随机选择一个 User-Agent
+headers = {
+    'User-Agent': random.choice(user_agents)
+}
+# Socks代理配置
+proxies = {
+    'http': 'socks5h://127.0.0.1:7890',
+    'https': 'socks5h://127.0.0.1:7890'
+}
+
 # 发送请求并获取第一页内容
-response = requests.get(base_url)
+response = requests.get(base_url, headers=headers, proxies=proxies)
+
 soup = BeautifulSoup(response.content, 'html.parser')
 
 # 定位所有的链接元素
@@ -43,7 +79,7 @@ for link in all_links:
 next_page_link = soup.find('a', string='下一页', href=True)
 while next_page_link:
     next_page_url = urljoin(base_url, next_page_link['href'])
-    response = requests.get(next_page_url)
+    response = requests.get(next_page_url,headers=headers, proxies=proxies)
     soup = BeautifulSoup(response.content, 'html.parser')
     
     # 继续查找页面上的链接
@@ -69,7 +105,7 @@ try:
     cursor = conn.cursor()
 
     for link in product_links:
-        response = requests.get(link)
+        response = requests.get(link,headers=headers, proxies=proxies)
         soup = BeautifulSoup(response.content, 'html.parser')
         
         # 查找所有符合条件的 <div> 标签
@@ -82,7 +118,7 @@ try:
             a_tags = div_tag.find_all('a')
             for a in a_tags:
                 href = a.get('href')
-                response2 = requests.get(href)
+                response2 = requests.get(href,headers=headers, proxies=proxies)
                 response2.raise_for_status() # 检查请求是否成功
                 html_content = response2.text # 获取返回的网页内容
                 soup2 = BeautifulSoup(html_content, 'html.parser')
