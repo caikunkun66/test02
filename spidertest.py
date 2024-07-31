@@ -5,7 +5,7 @@ import mysql.connector
 
 # MySQL数据库连接配置
 db_config = {
-    'host': 'localhost',
+    'host': '192.168.18.200',
     'user': 'root',
     'password': 'root_123456',
     'database': 'Test'
@@ -77,23 +77,32 @@ try:
 
         # 遍历每个符合条件的 <div> 标签
         for div_tag in div_tags:
-            # 在每个 <posts> 标签中查找 <img> <a>标签
+            # 在每个 <div> 标签中查找 <img> <a>标签
             img_tags = div_tag.find_all('img')
             a_tags = div_tag.find_all('a')
             for a in a_tags:
-                href = a.get('href')  
+                href = a.get('href')
+                response2 = requests.get(href)
+                response2.raise_for_status() # 检查请求是否成功
+                html_content = response2.text # 获取返回的网页内容
+                soup2 = BeautifulSoup(html_content, 'html.parser')
+                page = soup2.find_all('div', class_='theme-box wp-posts-content')# 查找特定的元素
+                page_str = str(page)
+                remove_str = """[<div class="theme-box wp-posts-content" data-nav="posts">"""
+                remove_str2 = '</div>]'
+                page_delete = page_str.replace(remove_str, '').replace(remove_str2, '')  
             # 输出每个 <img> 标签的 src\alt 属性值
             for img in img_tags:
                 img_src = img.get('data-src')
                 img_alt = img.get('alt')
-                html_content = soup.prettify()
+                
             # 插入数据到数据库
                 if img_src:
-                    insert_query = "INSERT INTO product_information (title, image, link,page) VALUES (%s, %s, %s,%s)"
-                    data = (img_alt, img_src, img_alt,)
-                    cursor.execute(insert_query, data,html_content)
-                    conn.commit() #提交事务，将数据插入到数据库中。在执行插入、更新或删除操作后，必须调用 conn.commit() 才能使更改生效。
-
+                    insert_query = "INSERT INTO product_information (title, image, link, page) VALUES (%s, %s, %s, %s)"
+                    data = (img_alt, img_src, img_alt, page_delete)
+                    cursor.execute(insert_query, data)
+                    conn.commit()  # 提交事务，将数据插入到数据库中
+    print("数据插入成功！")
 except mysql.connector.Error as err:
     print(f"数据库错误：{err}")
 
