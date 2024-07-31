@@ -99,7 +99,7 @@ try:
             # 插入数据到数据库
                 if img_src:
                     insert_query = "INSERT INTO product_information (title, image, link, page) VALUES (%s, %s, %s, %s)"
-                    data = (img_alt, img_src, img_alt, page_delete)
+                    data = (img_alt, img_src, href, page_delete)
                     cursor.execute(insert_query, data)
                     conn.commit()  # 提交事务，将数据插入到数据库中
     print("数据插入成功！")
